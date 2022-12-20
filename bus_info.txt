@@ -1,0 +1,1 @@
+{signalname}_{unit}_{count}_{value*count}
