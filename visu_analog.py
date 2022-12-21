@@ -50,6 +50,7 @@ def readSerial(application,page):
     data = dataStorage()
     global sig_val
     if application.getserialCommunication(page).inWaiting() > 0:
+        #TODO: get rid of direct call of variabls 
                 message = application.getserialCommunication(page).read_until()
                 data.setsignalName(str(message)[2:7])
                 data.setsignalUnit(str(message)[8:9])
@@ -138,22 +139,73 @@ class StartPage(tk.Frame):
         self.queue[1] = MyCircularQueue(50)
         
         tk.Frame.__init__(self,parent)
-        label = tk.Label(self,text="StartPage", font = LARGE_FONT)
+        label = tk.Label(self,text="Project Visu V0.0", font = LARGE_FONT)
         label.pack(pady=10,padx=10)
         
-        buttonconnect =ttk.Button(self, text="connect",
-                         command = self.connect)
-        buttonconnect.pack()
-
-        button_disconnect =ttk.Button(self, text="disconnect",
-                         command = self.disconnect)
-        button_disconnect.pack()
+        #style
+        style = ttk.Style()
+        style.configure("Button.TFrame")
+        style.configure("SerialCommunication.TFrame", background= "green")
+        style.configure("UI.TFrame")
         
-        canvas = FigureCanvasTkAgg(self.fig,self)
+        frame_serialCommunication=ttk.Frame(self,style="Button.TFrame")
+        frame_serialCommunication.pack(anchor=tk.NW)
+        label_connection= tk.Label(frame_serialCommunication,text= "Serial Connection:", font= LARGE_FONT)
+        label_connection.pack( anchor=tk.NW)
+        frame_button= ttk.Frame(frame_serialCommunication,style = "SerialCommunication.TFrame")
+        frame_button.pack(anchor=tk.NW)
+        frame_ui=ttk.Frame(self,style="UI.TFrame")
+        frame_ui.pack()
+        
+        buttonconnect =ttk.Button(frame_button, text="connect",
+                         command = self.connect)
+        buttonconnect.grid(ipadx=10, ipady=8,row=0,column = 0)
+        
+
+        button_disconnect =ttk.Button(frame_button, text="disconnect",
+                         command = self.disconnect)
+        button_disconnect.grid(ipadx=10, ipady=8,row=0,column = 1)
+        
+        canvas = FigureCanvasTkAgg(self.fig,frame_ui)
         canvas.draw()
-        canvas.get_tk_widget().pack(side=tk.TOP,fill=tk.BOTH, expand=True)
+        canvas.get_tk_widget().grid(row=0,column = 0, sticky="nw")
+        frame_control=ttk.Frame(frame_ui)
+        frame_control.grid(ipadx=50, ipady=225,row=0,column = 1)
+        label_control= tk.Label(frame_control,text= "Control:", font= LARGE_FONT)
+        label_control.grid(row=0,column = 0,sticky="nw")
+        label_control= tk.Label(frame_control,text= "Enter Angle between 0° and 180°:")
+        label_control.grid(row=1,column = 0,sticky="nw")
+        entry_angle= ttk.Entry(frame_control)
+        entry_angle.grid(row=2,column = 0 ,sticky="nw")
+        
+        button_send = ttk.Button(frame_control, text="send",
+                         command = partial(self.send,entry=entry_angle,signalname="motor",unit="degree",count=1))
+        button_send.grid(row=2,column = 1,sticky="nw")
     
+        
+    
+    def fetchentries(self,entry):
+        return entry.get()
+        
+    def send(self,entry,signalname,unit,count):
+        if self.isConnected :
+            value=self.fetchentries(entry)
+            #TODO fix this
+            if int(value)<0:
+                value = "000"    
+            elif int(value)<10 and int(value) >=0:
+                value="00"+ value
+            elif int(value)>=10 and int(value)<100:
+                value ="0" + value
+            elif int(value)>=180:
+                value = "180"
+                
+            self.serialCommunication.write((signalname + "_" + unit +"_"+ str(count) +"_"+ value +"\n").encode())
+            #TODO: send over serial com
+            print((signalname + "_" + unit +"_"+ str(count) +"_"+ value +"\n"))
+        
     def connect(self):
+        print("connect")
         try:
             self.serialCommunication = serial.Serial('COM5',56000)
             print("serial com established")
@@ -197,5 +249,5 @@ class StartPage(tk.Frame):
 if __name__ == "__main__":
 
     app = visu()
-    ani = animation.FuncAnimation(app.getfig(StartPage), partial(animate, application = app, page = StartPage), interval = 10)
+    ani = animation.FuncAnimation(app.getfig(StartPage), partial(animate, application = app, page = StartPage), interval = 100)
     app.mainloop()
