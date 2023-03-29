@@ -1,6 +1,9 @@
 import serial
 from serial import Serial
 
+import csv
+import os
+
 import matplotlib
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
@@ -181,9 +184,17 @@ class StartPage(tk.Frame):
         button_send = ttk.Button(frame_control, text="send",
                          command = partial(self.send,entry=entry_angle,signalname="motor",unit="degree",count=1))
         button_send.grid(row=2,column = 1,sticky="nw")
-    
         
+        button_savetocsv= ttk.Button(frame_control, text="save to csv",
+                         command = partial(self.savetocsv, data=self.queue))
+        button_savetocsv.grid(row=3,column = 0,sticky="nw")
     
+    def savetocsv(self,data):
+        print(os.getcwd())
+        with open (os.getcwd()+"/test.csv","w") as f:
+            writer = csv.writer(f)
+            writer.writerow(data[0].get())  
+     
     def fetchentries(self,entry):
         return entry.get()
         
